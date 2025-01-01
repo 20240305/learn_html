@@ -1,297 +1,646 @@
-<!DOCTYPE html><html lang="en">  <head>    <meta charset="UTF-8" />    <title>元旦快乐！长长久久！</title>    <link      rel="stylesheet"      href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/css/bootstrap.min.css"    />    <link      rel="stylesheet"      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css"    />    <style>      body,html{margin:0;height:100%;overflow:hidden;background:linear-gradient(          to bottom,#0a1f3b 0%,#1b3b5f 20%,#2a4973 40%,#1b3b5f 60%,#0a1f3b 100%                    );}#fireworks-canvas{position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(          to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0.4) 100%        );}.title{position:absolute;top:50px;left:50%;transform:translateX(-50%);color:#fff;font-family:'Montserrat',sans-serif;font-size:clamp(2rem,5vw,4rem);text-align:center;text-transform:uppercase;letter-spacing:0.5em;font-weight:200;text-shadow:0 0 10px rgba(255,255,255,0.8),0 0 20px rgba(255,255,255,0.6),0 0 30px rgba(255,255,255,0.4),0 0 40px rgba(255,182,255,0.3);opacity:0.92;z-index:1000;animation:glow 2s ease-in-out infinite alternate;padding-left:0.5em;}.title span{display:block;font-family:'Quicksand',sans-serif;font-size:0.4em;letter-spacing:0.2em;text-transform:lowercase;margin-top:1em;font-weight:300;opacity:0.8;}@keyframes glow{from{text-shadow:0 0 10px rgba(255,255,255,0.8),0 0 20px rgba(255,255,255,0.6),0 0 30px rgba(255,255,255,0.4),0 0 40px rgba(255,182,255,0.3);}to{text-shadow:0 0 20px rgba(255,255,255,0.9),0 0 30px rgba(255,255,255,0.7),0 0 40px rgba(255,255,255,0.5),0 0 50px rgba(255,182,255,0.4),0 0 60px rgba(255,182,255,0.3);}}@media (max-width:768px){.title{letter-spacing:0.3em;padding-left:0.3em;}.title span{font-size:0.5em;letter-spacing:0.15em;}}</style>  </head>  <body>    <canvas id="fireworks-canvas"></canvas>    <script>class Firework{constructor(ctx,canvasWidth,canvasHeight){this.ctx=ctx;this.canvasWidth=canvasWidth;this.canvasHeight=canvasHeight;this.reset()}reset(){this.x=Math.random()*this.canvasWidth;this.y=this.canvasHeight;this.color=`hsl(${Math.random()*360},100%,60%)`;this.dx=(Math.random()-0.5)*3;this.dy=-(Math.random()*10+10);this.exploded=false;this.particles=[];this.age=0}launch(){this.x+=this.dx;this.y+=this.dy;this.ctx.beginPath();this.ctx.moveTo(this.x-this.dx,this.y-this.dy);this.ctx.lineTo(this.x,this.y);this.ctx.strokeStyle=this.color;this.ctx.stroke();if(this.y<=this.canvasHeight*Math.random()*0.5){this.explode()}}explode(){const particleCount=Math.floor(Math.random()*50+50);for(let i=0;i<particleCount;i++){const angle=Math.random()*Math.PI*2;const speed=Math.random()*5+2;this.particles.push({x:this.x,y:this.y,dx:Math.cos(angle)*speed,dy:Math.sin(angle)*speed,size:Math.random()*3+1,alpha:1,color:this.color,trail:[{x:this.x,y:this.y}],maxTrailLength:10,})}this.exploded=true}updateParticles(){for(let i=this.particles.length-1;i>=0;i--){const particle=this.particles[i];particle.x+=particle.dx;particle.y+=particle.dy;particle.trail.push({x:particle.x,y:particle.y});if(particle.trail.length>particle.maxTrailLength){particle.trail.shift()}particle.dy+=0.15;particle.dx*=0.99;if(particle.trail.length>1){this.ctx.beginPath();this.ctx.moveTo(particle.trail[0].x,particle.trail[0].y);for(let j=1;j<particle.trail.length;j++){this.ctx.lineTo(particle.trail[j].x,particle.trail[j].y)}this.ctx.strokeStyle=`rgba(${this.getRGB(particle.color)},${particle.alpha})`;this.ctx.lineWidth=particle.size/2;this.ctx.stroke()}this.ctx.beginPath();this.ctx.arc(particle.x,particle.y,particle.size,0,Math.PI*2);this.ctx.fillStyle=`rgba(${this.getRGB(particle.color)},${particle.alpha})`;this.ctx.fill();particle.alpha-=0.01;if(particle.alpha<=0||particle.x<0||particle.x>this.canvasWidth||particle.y>this.canvasHeight){this.particles.splice(i,1)}}}update(){this.age++;if(!this.exploded){this.launch()}else{this.updateParticles()}if(this.exploded&&this.particles.length===0){this.reset()}}getRGB(hslColor){const match=hslColor.match(/hsl\((\d+\.?\d*),\s*(\d+)%,\s*(\d+)%\)/);if(match){const[_,h,s,l]=match;const rgb=this.hslToRgb(parseFloat(h),parseInt(s),parseInt(l));return rgb.join(',')}return'255,255,255'}hslToRgb(h,s,l){s/=100;l/=100;const k=(n)=>(n+h/30)%12;const a=s*Math.min(l,1-l);const f=(n)=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));return[Math.round(255*f(0)),Math.round(255*f(8)),Math.round(255*f(4)),]}}class FireworksDisplay{constructor(){this.canvas=document.getElementById('fireworks-canvas');this.ctx=this.canvas.getContext('2d');this.resize();this.fireworks=[];for(let i=0;i<8;i++){this.fireworks.push(new Firework(this.ctx,this.canvas.width,this.canvas.height))}window.addEventListener('resize',()=>this.resize());this.animate()}resize(){this.canvas.width=window.innerWidth;this.canvas.height=window.innerHeight}animate(){this.ctx.fillStyle='rgba(7, 7, 48, 0.15)';this.ctx.fillRect(0,0,this.canvas.width,this.canvas.height);this.fireworks.forEach((firework)=>firework.update());requestAnimationFrame(()=>this.animate())}}new FireworksDisplay();</script>  </body></html>
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
-<HTML>
- <HEAD>
-  <TITLE> Love </TITLE>
-  <META NAME="Generator" CONTENT="EditPlus">
-  <META NAME="Author" CONTENT="">
-  <META NAME="Keywords" CONTENT="">
-  <META NAME="Description" CONTENT="">
-  <style>
-  html, body {
-  height: 100%;
-  padding: 0;
-  margin: 0;
-  background: #000;
-}
-canvas {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-}
-.box {
-  position: absolute;
-  top: 50%;
-  left: 40%;
-  -webkit-transform: translateY(-50%);
-  -ms-transform: translateY(-50%);
-  -o-transform: translateY(-50%);
-  transform: translateY(-50%);
-  color: pink; /* 设置字体颜色为粉色 */
-  font-size: 5rem;
-  font-family: Arial, sans-serif; /* 使用 Arial 字体 */
-  text-shadow: none; /* 移除文字阴影 */
+<!DOCTYPE html>
+<html lang="zh-CN">
+<!--
+数据存储说明：
+所有用户数据都存储在浏览器的 localStorage 中，包括：
+1. 个人信息：
+   - profileName: 用户昵称
+   - profileImage: 用户头像（Base64格式）
+
+2. 学习资料：
+   - file_[文件名]: 上传的文件（Base64格式）
+   - filesList: 文件清单
+
+3. 工具链接：
+   - tools: 数组格式，包含{id, name, url}
+
+4. 个人介绍：
+   - aboutContent: 编辑器内容（HTML格式）
+
+5. 设置：
+   - darkMode: 深色模式状态（boolean）
+   - fontSize: 字体大小（数字）
+
+6. 打赏信息：
+   - wechatQR: 微信收款码（Base64格式）
+   - alipayQR: 支付宝收款码（Base64格式）
+
+待实现的高级功能：
+1. 数据导出和备份功能
+   - 导出所有localStorage数据
+   - 支持数据导入恢复
+
+2. 用户系统集成
+   - 登录注册功能
+   - 多设备数据同步
+
+3. 文件管理增强
+   - 文件分类管理
+   - 在线预览更多格式
+   - 文件加密存储
+
+4. 工具链接增强
+   - 链接分类管理
+   - 访问频率统计
+   - 链接有效性检查
+
+5. 编辑器增强
+   - Markdown支持
+   - 代码高亮
+   - 历史版本管理
+
+6. 主题定制
+   - 自定义主题色
+   - 主题导入导出
+   - 响应式布局优化
+
+7. 性能优化
+   - 大文件分片上传
+   - 数据缓存策略
+   - 懒加载优化
+
+接口说明：
+1. 个人信息管理
+   setupProfile(): 初始化个人信息设置
+   updateProfile(type, value): 更新个人信息
+
+2. 文件管理
+   handleFileUpload(): 处理文件上传
+   downloadFile(fileName): 下载文件
+   deleteFile(fileName): 删除文件
+
+3. 工具链接管理
+   addTool(): 添加工具链接
+   deleteTool(toolId): 删除工具链接
+   updateTool(toolId, data): 更新工具信息
+
+4. 内容编辑
+   insertImage(): 插入图片
+   insertVideo(): 插入视频
+   saveContent(): 保存内容
+
+5. 设置管理
+   setupThemeToggle(): 初始化主题切换
+   changeFontSize(operation): 调整字体大小
+   
+6. 打赏功能
+   showDonateModal(): 显示打赏窗口
+   setupQRCodeUpload(elementId, storageKey): 设置收款码
+-->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的个人博客</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        /* 添加深色模式样式 */
+        body.dark-mode {
+            background-color: #1a1a1a;
+        }
+
+        body.dark-mode .content-section {
+            background-color: #2d2d2d;
+            color: #ffffff;
+        }
+
+        /* 设置面板样式 */
+        .settings-panel {
+            display: grid;
+            gap: 20px;
+        }
+
+        .font-size-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* 文件上传和预览样式 */
+        .file-upload-area {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .files-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .file-card {
+            border: 1px solid #eee;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        /* 工具链接样式 */
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .tool-card {
+            border: 1px solid #eee;
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+        /* 打赏模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* 侧边栏样式 */
+        .sidebar {
+            width: 250px;
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px;
+        }
+
+        .profile {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .profile img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin-bottom: 10px;
+        }
+
+        .nav-menu {
+            list-style: none;
+        }
+
+        .nav-menu li {
+            margin-bottom: 15px;
+        }
+
+        .nav-menu a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            padding: 10px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .nav-menu a:hover {
+            background-color: #34495e;
+        }
+
+        /* 主要内容区域样式 */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+        }
+
+        .content-section {
+            display: none;
+            background-color: rgb(255, 255, 255);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        h1, h2 {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="counter-container" style="text-align: center; margin-bottom: 20px;">
+            <svg viewBox="0 0 310 64" width="310" height="64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                <title>Moe Counter!</title>
+                <style>
+                    svg {
+                        image-rendering: pixelated;
+                        filter: brightness(.6);
+                    }
+                </style>
+                <defs>
+                    <image id="0" width="46" height="64" xlink:href="data:image/gif;base64,R0lGODlhLgBAAPQfAP/iW/SxT//bKP/eQv/jZ/ehVemDIpNYNFJTVfWSH0dGSPJ9P15fYXFqUsRVL4WGiaKUYO9aKf/lc5qanFVQTPOAJGhpa//cNkxMTv/gT//ngM/R0m1ucVhZW0FAQgAAACH/C1hNUCBEYXRhWE1QPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgOS4xLWMwMDIgNzkuYTZhNjM5NjhhLCAyMDI0LzAzLzA2LTExOjUyOjA1ICAgICAgICAiPiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOnhtcE1NPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvbW0vIiB4bWxuczpzdFJlZj0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlUmVmIyIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgMjUuOSAoV2luZG93cykiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6ODYyMTQ5NDY4RkM4MTFFRkFDMUNENTVCNzM0NDI1RjIiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6ODYyMTQ5NDc4RkM4MTFFRkFDMUNENTVCNzM0NDI1RjIiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo4NjIxNDk0NDhGQzgxMUVGQUMxQ0Q1NUI3MzQ0MjVGMiIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo4NjIxNDk0NThGQzgxMUVGQUMxQ0Q1NUI3MzQ0MjVGMiIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PgH//v38+/r5+Pf29fTz8vHw7+7t7Ovq6ejn5uXk4+Lh4N/e3dzb2tnY19bV1NPS0dDPzs3My8rJyMfGxcTDwsHAv769vLu6ubi3trW0s7KxsK+urayrqqmop6alpKOioaCfnp2cm5qZmJeWlZSTkpGQj46NjIuKiYiHhoWEg4KBgH9+fXx7enl4d3Z1dHNycXBvbm1sa2ppaGdmZWRjYmFgX15dXFtaWVhXVlVUU1JRUE9OTUxLSklIR0ZFRENCQUA/Pj08Ozo5ODc2NTQzMjEwLy4tLCsqKSgnJiUkIyIhIB8eHRwbGhkYFxYVFBMSERAPDg0MCwoJCAcGBQQDAgEAACH5BAUAAB8ALAAAAAAuAEAAAAX/4CeOZGmeaKqubOu+cNrNdG3feC7nfJ97KJ9w6AGahkhe0UhKOm1L5shCrVqv2Gw2KhVxqAyteGzlmr4ezFOIjp4Z6bWvvXzHMdy8Xj+jF+1qeHuDfB1+XR9tHYIUBo6PkJGQDkV9HGYlingUCZ2en6CfFZQelpgkmh4NGqytrq+uC6SmbplwgaoaALu8vb67GrKVhpe1qLeLuRkDF83Oz84ZAMGzxKdTyHirywLQ3t3TwqXWxth3ys3S6uvcA+HVh4DJ2+mwrRng1MPxtuf0Fxk0BCgAoSCEALryiaNVpx+ufwEXRIgCIaE7feP4HfNnMeLEJRXxXVxIruHGhx2D/30sElIhvGImzaFsp5JiSpIaZc67udJDy5Evr3nJhg5gTZA3g5YbypGmRJsi3+2D+cfhTqc9f0rNSBVRKohHWSadKjQRUbBPkUbFyLDqyav10opdi7OrPG08oboku9Rs07hZx3It+zWv2r2D+xbGqhco35hMZwJuvLWt17M8D2g+oJVtSbc68dINJdjy3aIBB6oeWPrz5b9GJcieLZuuUsh+JQNkxw6xaauim3UbTpx4Zdenty1jxrx58+M5I+8kQL269evUgx14DFo6XnvgWy1Y8vutIELoub/GlT59+dAI4sufT79+/ei55fTwMwGQgv8ABijggAQqQMcEG9jR3kyCS7SBYIKZfCHhhBRWaKGFHjwIISoTPuDhhyCGKOKID3Cg4YYobKDiiiy26OKLL64A44w0wihjjTjWeGOOPLoYw49ABinkkEQWSWQIADs=" />
+                    <image id="1" width="34" height="64" xlink:href="data:image/gif;base64,R0lGODlhIgBAAPQfAEJCRHFqUvJ9P+5aKUdGSIWGiVJTVVRUVuiDIvSQH//iW//jZ3Z2eP/fSf/eQuB3JUxCQGlqbWNRPmxtcH5+gF5fYf/cNv/gT//ngGhpa8/R0m1ucUxMTlhZW0FAQgAAACH/C1hNUCBEYXRhWE1QPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgOS4xLWMwMDIgNzkuYTZhNjM5NjhhLCAyMDI0LzAzLzA2LTExOjUyOjA1ICAgICAgICAiPiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOnhtcE1NPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvbW0vIiB4bWxuczpzdFJlZj0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlUmVmIyIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgMjUuOSAoV2luZG93cykiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6MDg2OThGRjI4RkM4MTFFRjk1NERDQ0ZDMzI2NjQ5NDkiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6MDg2OThGRjM4RkM4MTFFRjk1NERDQ0ZDMzI2NjQ5NDkiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDowODY5OEZGMDhGQzgxMUVGOTU0RENDRkMzMjY2NDk0OSIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDowODY5OEZGMThGQzgxMUVGOTU0RENDRkMzMjY2NDk0OSIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PgH//v38+/r5+Pf29fTz8vHw7+7t7Ovq6ejn5uXk4+Lh4N/e3dzb2tnY19bV1NPS0dDPzs3My8rJyMfGxcTDwsHAv769vLu6ubi3trW0s7KxsK+urayrqqmop6alpKOioaCfnp2cm5qZmJeWlZSTkpGQj46NjIuKiYiHhoWEg4KBgH9+fXx7enl4d3Z1dHNycXBvbm1sa2ppaGdmZWRjYmFgX15dXFtaWVhXVlVUU1JRUE9OTUxLSklIR0ZFRENCQUA/Pj08Ozo5ODc2NTQzMjEwLy4tLCsqKSgnJiUkIyIhIB8eHRwbGhkYFxYVFBMSERAPDg0MCwoJCAcGBQQDAgEAACH5BAUAAB8ALAAAAAAiAEAAAAX/4CeOZGmeaKqubOuSXSzPdB2rdp4Dqe7PAA/qRwwKTcSf8VjKOJ/QqDTD8ViZpE2kwp16J5vq9bSpeDhJmVNsJZvR6c76ih2Vzx02fR+bj013aHp7V31hdG54YhIIjY4PVoZ6iYIejAmYmQORcod/TW95HgEYpaYCmx6SiIChVaQKsQoYqJx+ba2KoxgXDr60qaufWa67vRYXwLaeuKC6sBbIyqqdk7mV0NK11Ld1IoGi2cnbws3Ez7zR48HVrM7Y6drs3ZTh8evL1u/2x/jczN4+gHt1b1q5gAONqTPYbpidYuIY0rvGbyG5huYeousnEWA9ghwvTtwH0uI8jxRLrsrL5+4cvJAn9bmsuPKfTI0vTbJ0+A1iQZEoSSqsefDjUH9FUx7teLPnRp02W+KkiRQjQp8wd2Z0+rKBV6ZSudpbQHYBWJ4CfZoqJQCC1qu6CPGxalQunaQkDejdy5fvyJlxbjGgRKCw4cOICVTwxEBDIruQF1dp7BiQlsuYM2sOQ7lyE8wFQoseTTo0BQ2oPadIzbq1a9YsXst+HXu2bdS1b89+wbu379/Ag7sIAQA7" />
+                </defs>
+                <g>
+                    <use x="0" xlink:href="#0" />
+                    <use x="46" xlink:href="#0" />
+                    <use x="92" xlink:href="#0" />
+                    <use x="138" xlink:href="#0" />
+                    <use x="184" xlink:href="#0" />
+                    <use x="230" xlink:href="#1" />
+                    <use x="264" xlink:href="#0" />
+                </g>
+            </svg>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- 侧边栏 -->
+        <div class="sidebar">
+            <div class="profile">
+                <img src="https://via.placeholder.com/100" alt="头像">
+                <h2>博主昵称</h2>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="#study" onclick="showContent('study')">学习专区</a></li>
+                <li><a href="#tools" onclick="showContent('tools')">实用工具</a></li>
+                <li><a href="#about" onclick="showContent('about')">个人介绍</a></li>
+                <li><a href="#settings" onclick="showContent('settings')">设置</a></li>
+                <li><a href="#donate" onclick="showContent('donate')">打赏支持</a></li>
+            </ul>
+        </div>
+
+        <!-- 主要内容区域 -->
+        <!-- 在 body 中的 main-content 部分 -->
+<div class="main-content">
+    <div id="study" class="content-section">
+        <h1>学习专区</h1>
+        <div class="file-upload-area">
+            <input type="file" id="study-files" multiple>
+            <p>点击或拖拽文件到此处上传</p>
+        </div>
+        <div class="files-preview" id="files-list"></div>
+    </div>
+
+            <div id="tools" class="content-section">
+                <h1>实用工具</h1>
+                <div class="tool-add-form">
+                    <input type="text" id="tool-name" placeholder="网站名称">
+                    <input type="url" id="tool-url" placeholder="网站地址">
+                    <button onclick="addTool()">添加工具</button>
+                </div>
+                <div class="tools-grid" id="tools-list"></div>
+            </div>
+
+            <div id="about" class="content-section">
+                <h1>个人介绍</h1>
+                <div id="editor">
+                    <div contenteditable="true" class="editable-content">
+                        在这里编辑你的个人介绍...
+                    </div>
+                    <button onclick="insertImage()">插入图片</button>
+                    <button onclick="insertVideo()">插入视频</button>
+                    <button onclick="saveContent()">保存</button>
+                </div>
+            </div>
+
+            <div id="settings" class="content-section">
+                <h1>设置</h1>
+                <div class="settings-panel">
+                    <div class="theme-switch">
+                        <label>
+                            <input type="checkbox" id="theme-toggle">
+                            夜间模式
+                        </label>
+                    </div>
+                    <div class="font-size-control">
+                        <label>字体大小：</label>
+                        <button onclick="changeFontSize('-')">A-</button>
+                        <span id="current-size">16</span>
+                        <button onclick="changeFontSize('+')">A+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="donate" class="content-section">
+                <h1>打赏支持</h1>
+                <button onclick="showDonateModal()">打赏作者</button>
+            </div>
+        </main>
+    </div>
+
+<!-- 打赏模态框 -->
+<div id="donate-modal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <div class="qr-codes">
+            <div class="wechat">
+                <h3>微信支付</h3>
+                <img id="wechat-qr" src="path-to-wechat-qr.jpg" alt="微信收款码">
+            </div>
+            <div class="alipay">
+                <h3>支付宝</h3>
+                <img id="alipay-qr" src="path-to-alipay-qr.jpg" alt="支付宝收款码">
+            </div>
+        </div>
+    </div>
+</div>
+
+    <script>
+        function showContent(sectionId) {
+            // 隐藏所有内容区域
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // 显示选中的内容区域
+            document.getElementById(sectionId).classList.add('active');
+        }
+
+        // 默认显示第一个内容区域
+        window.onload = function() {
+            showContent('study');
+        }
+
+// 工具链接管理
+function addTool() {
+    const name = document.getElementById('tool-name').value;
+    const url = document.getElementById('tool-url').value;
+    
+    // 输入验证
+    if (!name || !url) {
+        alert('请输入网站名称和地址！');
+        return;
+    }
+    
+    // 验证URL格式
+    try {
+        new URL(url);
+    } catch (e) {
+        alert('请输入有效的网址！');
+        return;
+    }
+    
+    const toolsList = document.getElementById('tools-list');
+    const toolCard = document.createElement('div');
+    toolCard.className = 'tool-card';
+    
+    // 为每个工具生成唯一ID
+    const toolId = Date.now().toString();
+    toolCard.dataset.id = toolId;
+    
+    toolCard.innerHTML = `
+        <h3>${name}</h3>
+        <a href="${url}" target="_blank" rel="noopener noreferrer">访问</a>
+        <button onclick="deleteTool('${toolId}')">删除</button>
+    `;
+    toolsList.appendChild(toolCard);
+    
+    // 保存到 localStorage
+    const tools = JSON.parse(localStorage.getItem('tools') || '[]');
+    tools.push({ id: toolId, name, url });
+    localStorage.setItem('tools', JSON.stringify(tools));
+    
+    // 清空输入框
+    document.getElementById('tool-name').value = '';
+    document.getElementById('tool-url').value = '';
 }
 
-  </style>
-  <style type="text/css">
-	div{auto;
-	  color: #FF8000;
-	  font-size: 5rem;
-	  font-family: STXingkai;
-	  text-shadow: 0 0 10px plum,0 0 20px plum,0 0 30px plum,0 0 40px plum;
-	  }
-	  .box{
-		  position: absolute;
-		  top: 50%;
-		  left: 40%;
-		  -webkit-transform: translateY(-50%);
-		  -ms-transform: translateY(-50%);
-		  -o-transform: translateY(-50%);
-		  transform: translateY(-50%);
-	  }
-  </style>
- </HEAD>
 
- <BODY>
-  <canvas id="pinkboard"></canvas>
-  <script>
-  /*
- * Settings
- */
-var settings = {
-  particles: {
-    length:   500, // maximum amount of particles
-    duration:   2, // particle duration in sec
-    velocity: 100, // particle velocity in pixels/sec
-    effect: -0.75, // play with this for a nice effect
-    size:      30, // particle size in pixels
-  },
+// 打赏相关功能
+function setupDonateFeature() {
+    const modal = document.getElementById('donate-modal');
+    const closeBtn = modal.querySelector('.close');
+    
+    // 关闭模态框
+    closeBtn.onclick = function() {
+        modal.style.display = 'none';
+    }
+    
+    // 点击模态框外部关闭
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    }
+    
+    // 设置收款码
+    setupQRCodeUpload('wechat-qr', 'wechatQR');
+    setupQRCodeUpload('alipay-qr', 'alipayQR');
+}
+
+// 收款码上传功能
+function setupQRCodeUpload(elementId, storageKey) {
+    const qrImg = document.getElementById(elementId);
+    
+    // 从localStorage加载已保存的收款码
+    const savedQR = localStorage.getItem(storageKey);
+    if (savedQR) {
+        qrImg.src = savedQR;
+    }
+    
+    // 点击图片上传新的收款码
+    qrImg.addEventListener('click', () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = e => {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = e => {
+                qrImg.src = e.target.result;
+                localStorage.setItem(storageKey, e.target.result);
+            };
+            reader.readAsDataURL(file);
+        };
+        input.click();
+    });
+}
+
+// 删除工具
+function deleteTool(toolId) {
+    // 从DOM中删除
+    const toolCard = document.querySelector(`.tool-card[data-id="${toolId}"]`);
+    if (toolCard) {
+        toolCard.remove();
+    }
+    
+    // 从localStorage中删除
+    const tools = JSON.parse(localStorage.getItem('tools') || '[]');
+    const updatedTools = tools.filter(tool => tool.id !== toolId);
+    localStorage.setItem('tools', JSON.stringify(updatedTools));
+}
+        // 个人信息设置
+function setupProfile() {
+    const profileImg = document.querySelector('.profile img');
+    const profileName = document.querySelector('.profile h2');
+    
+    // 从localStorage加载保存的设置
+    const savedName = localStorage.getItem('profileName');
+    const savedImage = localStorage.getItem('profileImage');
+    
+    if (savedName) profileName.textContent = savedName;
+    if (savedImage) profileImg.src = savedImage;
+    
+    // 点击头像更换图片
+    profileImg.addEventListener('click', () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = e => {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = e => {
+                profileImg.src = e.target.result;
+                localStorage.setItem('profileImage', e.target.result);
+            };
+            reader.readAsDataURL(file);
+        };
+        input.click();
+    });
+    
+    // 点击昵称修改
+    profileName.addEventListener('click', () => {
+        const newName = prompt('请输入新的昵称：', profileName.textContent);
+        if (newName) {
+            profileName.textContent = newName;
+            localStorage.setItem('profileName', newName);
+        }
+    });
+}
+
+// 文件上传和预览
+function handleFileUpload() {
+    const fileInput = document.getElementById('study-files');
+    const filesList = document.getElementById('files-list');
+    
+    fileInput.addEventListener('change', e => {
+        const files = Array.from(e.target.files);
+        files.forEach(file => {
+            const fileCard = document.createElement('div');
+            fileCard.className = 'file-card';
+            fileCard.innerHTML = `
+                <h3>${file.name}</h3>
+                <p>${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                <button onclick="downloadFile('${file.name}')">下载</button>
+            `;
+            filesList.appendChild(fileCard);
+            
+            // 保存到 localStorage
+            const fileReader = new FileReader();
+            fileReader.onload = e => {
+                localStorage.setItem(`file_${file.name}`, e.target.result);
+            };
+            fileReader.readAsDataURL(file);
+        });
+    });
+}
+
+// 工具链接管理
+function addTool() {
+    const name = document.getElementById('tool-name').value;
+    const url = document.getElementById('tool-url').value;
+    if (!name || !url) return;
+    
+    const toolsList = document.getElementById('tools-list');
+    const toolCard = document.createElement('div');
+    toolCard.className = 'tool-card';
+    toolCard.innerHTML = `
+        <h3>${name}</h3>
+        <a href="${url}" target="_blank">访问</a>
+        <button onclick="deleteTool(this)">删除</button>
+    `;
+    toolsList.appendChild(toolCard);
+    
+    // 保存到 localStorage
+    const tools = JSON.parse(localStorage.getItem('tools') || '[]');
+    tools.push({ name, url });
+    localStorage.setItem('tools', JSON.stringify(tools));
+}
+
+// 主题切换
+function setupThemeToggle() {
+    const toggle = document.getElementById('theme-toggle');
+    const body = document.body;
+    
+    toggle.checked = localStorage.getItem('darkMode') === 'true';
+    if (toggle.checked) body.classList.add('dark-mode');
+    
+    toggle.addEventListener('change', () => {
+        body.classList.toggle('dark-mode');
+        localStorage.setItem('darkMode', toggle.checked);
+    });
+}
+
+// 字体大小调整
+function changeFontSize(operation) {
+    const currentSize = document.getElementById('current-size');
+    let size = parseInt(currentSize.textContent);
+    
+    if (operation === '+' && size < 24) size += 2;
+    if (operation === '-' && size > 12) size -= 2;
+    
+    currentSize.textContent = size;
+    document.body.style.fontSize = size + 'px';
+    localStorage.setItem('fontSize', size);
+}
+
+// 打赏模态框
+function showDonateModal() {
+    const modal = document.getElementById('donate-modal');
+    modal.style.display = 'block';
+}
+
+// 初始化
+window.onload = function() {
+    showContent('study');
+    setupProfile();
+    handleFileUpload();
+    setupThemeToggle();
+    
+    // 加载保存的字体大小
+    const savedSize = localStorage.getItem('fontSize');
+    if (savedSize) {
+        document.getElementById('current-size').textContent = savedSize;
+        document.body.style.fontSize = savedSize + 'px';
+    }
+    
+    // 加载保存的工具链接
+    const tools = JSON.parse(localStorage.getItem('tools') || '[]');
+    tools.forEach(tool => {
+        const toolsList = document.getElementById('tools-list');
+        const toolCard = document.createElement('div');
+        toolCard.className = 'tool-card';
+        toolCard.innerHTML = `
+            <h3>${tool.name}</h3>
+            <a href="${tool.url}" target="_blank">访问</a>
+            <button onclick="deleteTool(this)">删除</button>
+        `;
+        toolsList.appendChild(toolCard);
+    });
 };
-
-/*
- * RequestAnimationFrame polyfill by Erik Möller
- */
-(function(){var b=0;var c=["ms","moz","webkit","o"];for(var a=0;a<c.length&&!window.requestAnimationFrame;++a){window.requestAnimationFrame=window[c[a]+"RequestAnimationFrame"];window.cancelAnimationFrame=window[c[a]+"CancelAnimationFrame"]||window[c[a]+"CancelRequestAnimationFrame"]}if(!window.requestAnimationFrame){window.requestAnimationFrame=function(h,e){var d=new Date().getTime();var f=Math.max(0,16-(d-b));var g=window.setTimeout(function(){h(d+f)},f);b=d+f;return g}}if(!window.cancelAnimationFrame){window.cancelAnimationFrame=function(d){clearTimeout(d)}}}());
-
-/*
- * Point class
- */
-var Point = (function() {
-  function Point(x, y) {
-    this.x = (typeof x !== 'undefined') ? x : 0;
-    this.y = (typeof y !== 'undefined') ? y : 0;
-  }
-  Point.prototype.clone = function() {
-    return new Point(this.x, this.y);
-  };
-  Point.prototype.length = function(length) {
-    if (typeof length == 'undefined')
-      return Math.sqrt(this.x * this.x + this.y * this.y);
-    this.normalize();
-    this.x *= length;
-    this.y *= length;
-    return this;
-  };
-  Point.prototype.normalize = function() {
-    var length = this.length();
-    this.x /= length;
-    this.y /= length;
-    return this;
-  };
-  return Point;
-})();
-
-/*
- * Particle class
- */
-var Particle = (function() {
-  function Particle() {
-    this.position = new Point();
-    this.velocity = new Point();
-    this.acceleration = new Point();
-    this.age = 0;
-  }
-  Particle.prototype.initialize = function(x, y, dx, dy) {
-    this.position.x = x;
-    this.position.y = y;
-    this.velocity.x = dx;
-    this.velocity.y = dy;
-    this.acceleration.x = dx * settings.particles.effect;
-    this.acceleration.y = dy * settings.particles.effect;
-    this.age = 0;
-  };
-  Particle.prototype.update = function(deltaTime) {
-    this.position.x += this.velocity.x * deltaTime;
-    this.position.y += this.velocity.y * deltaTime;
-    this.velocity.x += this.acceleration.x * deltaTime;
-    this.velocity.y += this.acceleration.y * deltaTime;
-    this.age += deltaTime;
-  };
-  Particle.prototype.draw = function(context, image) {
-    function ease(t) {
-      return (--t) * t * t + 1;
-    }
-    var size = image.width * ease(this.age / settings.particles.duration);
-    context.globalAlpha = 1 - this.age / settings.particles.duration;
-    context.drawImage(image, this.position.x - size / 2, this.position.y - size / 2, size, size);
-  };
-  return Particle;
-})();
-
-/*
- * ParticlePool class
- */
-var ParticlePool = (function() {
-  var particles,
-      firstActive = 0,
-      firstFree   = 0,
-      duration    = settings.particles.duration;
-  
-  function ParticlePool(length) {
-    // create and populate particle pool
-    particles = new Array(length);
-    for (var i = 0; i < particles.length; i++)
-      particles[i] = new Particle();
-  }
-  ParticlePool.prototype.add = function(x, y, dx, dy) {
-    particles[firstFree].initialize(x, y, dx, dy);
-    
-    // handle circular queue
-    firstFree++;
-    if (firstFree   == particles.length) firstFree   = 0;
-    if (firstActive == firstFree       ) firstActive++;
-    if (firstActive == particles.length) firstActive = 0;
-  };
-  ParticlePool.prototype.update = function(deltaTime) {
-    var i;
-    
-    // update active particles
-    if (firstActive < firstFree) {
-      for (i = firstActive; i < firstFree; i++)
-        particles[i].update(deltaTime);
-    }
-    if (firstFree < firstActive) {
-      for (i = firstActive; i < particles.length; i++)
-        particles[i].update(deltaTime);
-      for (i = 0; i < firstFree; i++)
-        particles[i].update(deltaTime);
-    }
-    
-    // remove inactive particles
-    while (particles[firstActive].age >= duration && firstActive != firstFree) {
-      firstActive++;
-      if (firstActive == particles.length) firstActive = 0;
-    }
-    
-    
-  };
-  ParticlePool.prototype.draw = function(context, image) {
-    // draw active particles
-    if (firstActive < firstFree) {
-      for (i = firstActive; i < firstFree; i++)
-        particles[i].draw(context, image);
-    }
-    if (firstFree < firstActive) {
-      for (i = firstActive; i < particles.length; i++)
-        particles[i].draw(context, image);
-      for (i = 0; i < firstFree; i++)
-        particles[i].draw(context, image);
-    }
-  };
-  return ParticlePool;
-})();
-
-/*
- * Putting it all together
- */
-(function(canvas) {
-  var context = canvas.getContext('2d'),
-      particles = new ParticlePool(settings.particles.length),
-      particleRate = settings.particles.length / settings.particles.duration, // particles/sec
-      time;
-  
-  // get point on heart with -PI <= t <= PI
-  function pointOnHeart(t) {
-    return new Point(
-      160 * Math.pow(Math.sin(t), 3),
-      130 * Math.cos(t) - 50 * Math.cos(2 * t) - 20 * Math.cos(3 * t) - 10 * Math.cos(4 * t) + 25
-    );
-  }
-  
-  // creating the particle image using a dummy canvas
-  var image = (function() {
-    var canvas  = document.createElement('canvas'),
-        context = canvas.getContext('2d');
-    canvas.width  = settings.particles.size;
-    canvas.height = settings.particles.size;
-    // helper function to create the path
-    function to(t) {
-      var point = pointOnHeart(t);
-      point.x = settings.particles.size / 2 + point.x * settings.particles.size / 350;
-      point.y = settings.particles.size / 2 - point.y * settings.particles.size / 350;
-      return point;
-    }
-    // create the path
-    context.beginPath();
-    var t = -Math.PI;
-    var point = to(t);
-    context.moveTo(point.x, point.y);
-    while (t < Math.PI) {
-      t += 0.01; // baby steps!
-      point = to(t);
-      context.lineTo(point.x, point.y);
-    }
-    context.closePath();
-    // create the fill
-    context.fillStyle = '#FF8000';
-    context.fill();
-    // create the image
-    var image = new Image();
-    image.src = canvas.toDataURL();
-    return image;
-  })();
-  
-  // render that thing!
-  function render() {
-    // next animation frame
-    requestAnimationFrame(render);
-    
-    // update time
-    var newTime   = new Date().getTime() / 1000,
-        deltaTime = newTime - (time || newTime);
-    time = newTime;
-    
-    // clear canvas
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // create new particles
-    var amount = particleRate * deltaTime;
-    for (var i = 0; i < amount; i++) {
-      var pos = pointOnHeart(Math.PI - 2 * Math.PI * Math.random());
-      var dir = pos.clone().length(settings.particles.velocity);
-      particles.add(canvas.width / 2 + pos.x, canvas.height / 2 - pos.y, dir.x, -dir.y);
-    }
-    
-    // update and draw particles
-    particles.update(deltaTime);
-    particles.draw(context, image);
-  }
-  
-  // handle (re-)sizing of the canvas
-  function onResize() {
-    canvas.width  = canvas.clientWidth;
-    canvas.height = canvas.clientHeight;
-  }
-  window.onresize = onResize;
-  
-  // delay rendering bootstrap
-  setTimeout(function() {
-    onResize();
-    render();
-  }, 10);
-})(document.getElementById('pinkboard'));
-  </script>
-  <div class="box">MC❤ZG</div>
- </BODY>
-</HTML>
+    </script>
+</body>
+</html>
